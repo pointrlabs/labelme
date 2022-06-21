@@ -38,6 +38,7 @@ class Canvas(QtWidgets.QWidget):
 
     _fill_drawing = False
     _highlight_polygons = False
+    _perpendicular_constraint = False
 
     def __init__(self, *args, **kwargs):
         self.epsilon = kwargs.pop("epsilon", 10.0)
@@ -95,6 +96,12 @@ class Canvas(QtWidgets.QWidget):
 
     def setFillDrawing(self, value):
         self._fill_drawing = value
+
+    def perpendicularConstraint(self):
+        return self._perpendicular_constraint
+
+    def setPerpendicularConstraint(self, value):
+        self._perpendicular_constraint = value
 
     def highlightPolygons(self):
         return self._highlight_polygons
@@ -214,6 +221,15 @@ class Canvas(QtWidgets.QWidget):
             if not self.current:
                 return
 
+            if self.perpendicularConstraint():
+                last_point = self.current[-1]
+                dv = pos - last_point
+                if abs(dv.x()) > abs(dv.y()):
+                    dv.setY(0)
+                else:
+                    dv.setX(0)
+                pos = last_point + dv
+
             if self.outOfPixmap(pos):
                 # Don't allow the user to draw outside the pixmap.
                 # Project the point to the pixmap's edges.
@@ -224,6 +240,16 @@ class Canvas(QtWidgets.QWidget):
                 and self.createMode == "polygon"
                 and self.closeEnough(pos, self.current[0])
             ):
+                # Move the last point a little bit to keep everything perpendicular
+                if self.perpendicularConstraint():
+                    p_correct = self.current[-1]
+                    if pos.x() == p_correct.x():
+                        p_correct.setX(self.current[0].x())
+                    else:
+                        p_correct.setY(self.current[0].y())
+                    if self.closeEnough(self.current[-1], p_correct):
+                        self.current[-1] = p_correct
+                        
                 # Attract line to starting point and
                 # colorise to alert the user.
                 pos = self.current[0]

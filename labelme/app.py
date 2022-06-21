@@ -567,6 +567,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         fill_drawing.trigger()
 
+        perpendicular_constraint = action(
+            self.tr("Perpendicular constraint"),
+            self.canvas.setPerpendicularConstraint,
+            shortcuts["perpendicular_constraint"],
+            None,
+            self.tr("Enable perpendicular constraint while drawing"),
+            checkable=True,
+            enabled=True,
+        )
+
         highlight_polygons = action(
             self.tr("Highlight polygons"),
             self.canvas.setHighlightPolygons,
@@ -709,6 +719,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.file_dock.toggleViewAction(),
                 None,
                 fill_drawing,
+                None,
+                perpendicular_constraint,
                 None,
                 hideAll,
                 showAll,
