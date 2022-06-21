@@ -91,6 +91,10 @@ class Canvas(QtWidgets.QWidget):
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
 
+        # Window select mode
+        self.window_selection_mode = False
+        self.selection_window = dict()
+
     def fillDrawing(self):
         return self._fill_drawing
 
@@ -210,6 +214,10 @@ class Canvas(QtWidgets.QWidget):
         except AttributeError:
             return
 
+        if self.window_selection_mode:
+            self.selection_window["p_end"] = pos
+            self.repaint()
+
         self.prevMovePoint = pos
         self.restoreCursor()
 
@@ -249,7 +257,7 @@ class Canvas(QtWidgets.QWidget):
                         p_correct.setY(self.current[0].y())
                     if self.closeEnough(self.current[-1], p_correct):
                         self.current[-1] = p_correct
-                        
+
                 # Attract line to starting point and
                 # colorise to alert the user.
                 pos = self.current[0]
@@ -428,6 +436,13 @@ class Canvas(QtWidgets.QWidget):
                 self.selectShapePoint(pos, multiple_selection_mode=group_mode)
                 self.prevPoint = pos
                 self.repaint()
+
+                # Window selection mode
+                if int(ev.modifiers()) == QtCore.Qt.ShiftModifier:
+                    self.selection_window["p_start"] = pos
+                    self.selection_window["p_end"] = pos
+                    self.setWindowSelectionMode(True)
+
         elif ev.button() == QtCore.Qt.RightButton and self.editing():
             group_mode = int(ev.modifiers()) == QtCore.Qt.ControlModifier
             if not self.selectedShapes or (
@@ -460,6 +475,17 @@ class Canvas(QtWidgets.QWidget):
                         [x for x in self.selectedShapes if x != self.hShape]
                     )
 
+                if self.window_selection_mode:
+                    # set the shapes inside the selection window as selected
+                    window = QtCore.QRectF(self.selection_window["p_start"], self.selection_window["p_end"])
+                    for shape in self.shapes:
+                        if window.contains(shape.boundingRect()):
+                            # print(shape.label, shape.boundingRect(), shape.selected)
+                            self.selectionChanged.emit(self.selectedShapes + [shape])
+
+                    self.setWindowSelectionMode(False)
+                    self.repaint()
+
         if self.movingShape and self.hShape:
             index = self.shapes.index(self.hShape)
             if (
@@ -470,6 +496,23 @@ class Canvas(QtWidgets.QWidget):
                 self.shapeMoved.emit()
 
             self.movingShape = False
+
+    def setWindowSelectionMode(self, value):
+        self.window_selection_mode = value
+
+    def drawSelectionWindow(self, painter):
+        p1 = self.selection_window["p_start"]
+        p1 = QtCore.QPoint(p1.x(), p1.y())
+
+        p2 = self.selection_window["p_end"]
+        p2 = QtCore.QPoint(p2.x(), p2.y())
+
+        pen = QtGui.QPen()
+        pen.setColor(QtCore.Qt.green)
+        pen.setWidth(10)
+        pen.setStyle(QtCore.Qt.DotLine)
+        painter.setPen(pen)
+        painter.drawRect(QtCore.QRect(p1, p2))
 
     def endMove(self, copy):
         assert self.selectedShapes and self.selectedShapesCopy
@@ -678,6 +721,9 @@ class Canvas(QtWidgets.QWidget):
             drawing_shape.fill = True
             drawing_shape.paint(p)
 
+        if self.window_selection_mode:
+            self.drawSelectionWindow(p)
+            
         p.end()
 
     def transformPos(self, point):
