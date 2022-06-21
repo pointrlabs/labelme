@@ -37,6 +37,7 @@ class Canvas(QtWidgets.QWidget):
     _createMode = "polygon"
 
     _fill_drawing = False
+    _highlight_polygons = False
 
     def __init__(self, *args, **kwargs):
         self.epsilon = kwargs.pop("epsilon", 10.0)
@@ -94,6 +95,12 @@ class Canvas(QtWidgets.QWidget):
 
     def setFillDrawing(self, value):
         self._fill_drawing = value
+
+    def highlightPolygons(self):
+        return self._highlight_polygons
+
+    def setHighlightPolygons(self, value):
+        self._highlight_polygons = value
 
     @property
     def createMode(self):
@@ -624,6 +631,8 @@ class Canvas(QtWidgets.QWidget):
                 shape
             ):
                 shape.fill = shape.selected or shape == self.hShape
+                if self.highlightPolygons():
+                    shape.fill = True
                 shape.paint(p)
         if self.current:
             self.current.paint(p)

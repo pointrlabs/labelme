@@ -567,6 +567,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         fill_drawing.trigger()
 
+        highlight_polygons = action(
+            self.tr("Highlight polygons"),
+            self.canvas.setHighlightPolygons,
+            None,
+            None,
+            self.tr("Highlight polygons"),
+            checkable=True,
+            enabled=True,
+        )
+
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
         utils.addActions(labelMenu, (edit, delete))
@@ -702,6 +712,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 hideAll,
                 showAll,
+                highlight_polygons,
                 None,
                 zoomIn,
                 zoomOut,
@@ -1156,9 +1167,9 @@ class MainWindow(QtWidgets.QMainWindow):
         shape.line_color = QtGui.QColor(r, g, b)
         shape.vertex_fill_color = QtGui.QColor(r, g, b)
         shape.hvertex_fill_color = QtGui.QColor(255, 255, 255)
-        shape.fill_color = QtGui.QColor(r, g, b, 128)
+        shape.fill_color = QtGui.QColor(r, g, b, 48) #128
         shape.select_line_color = QtGui.QColor(255, 255, 255)
-        shape.select_fill_color = QtGui.QColor(r, g, b, 155)
+        shape.select_fill_color = QtGui.QColor(r, g, b, 175) #155
 
     def _get_rgb_by_label(self, label):
         if self._config["shape_color"] == "auto":
