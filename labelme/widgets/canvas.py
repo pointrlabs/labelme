@@ -723,7 +723,7 @@ class Canvas(QtWidgets.QWidget):
 
         if self.window_selection_mode:
             self.drawSelectionWindow(p)
-            
+
         p.end()
 
     def transformPos(self, point):
@@ -890,7 +890,7 @@ class Canvas(QtWidgets.QWidget):
             if int(modifiers) == 0:
                 self.snapping = True
         elif self.editing():
-            if self.movingShape and self.selectedShapes:
+            if self.movingShape and self.selectedShapes and self.selectedShapes[0] in self.shapes:
                 index = self.shapes.index(self.selectedShapes[0])
                 if (
                     self.shapesBackups[-1][index].points
