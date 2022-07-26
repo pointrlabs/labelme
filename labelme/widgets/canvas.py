@@ -580,6 +580,10 @@ class Canvas(QtWidgets.QWidget):
                     else:
                         self.hShapeIsSelected = True
                     self.calculateOffsets(point)
+
+                    # move selected shape to the end of the list
+                    self.shapes.remove(shape)
+                    self.shapes.append(shape)
                     return
         self.deSelectShape()
 
