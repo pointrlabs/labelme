@@ -586,6 +586,7 @@ class MainWindow(QtWidgets.QMainWindow):
             checkable=True,
             enabled=True,
         )
+        highlight_polygons.trigger()
 
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
@@ -1179,7 +1180,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape.line_color = QtGui.QColor(r, g, b)
         shape.vertex_fill_color = QtGui.QColor(r, g, b)
         shape.hvertex_fill_color = QtGui.QColor(255, 255, 255)
-        shape.fill_color = QtGui.QColor(r, g, b, 48) #128
+        shape.fill_color = QtGui.QColor(r, g, b, 60) #48 #128
         shape.select_line_color = QtGui.QColor(255, 255, 255)
         shape.select_fill_color = QtGui.QColor(r, g, b, 175) #155
 
