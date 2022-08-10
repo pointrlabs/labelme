@@ -78,7 +78,7 @@ conda create --name=labelme python=3
 source activate labelme
 # conda install -c conda-forge pyside2
 # conda install pyqt
-# pip install pyqt5  # pyqt5 can be installed via pip on python3
+# pip install pyqt5  # pyqt5 can be installed via pip on python3. The recent version through pip asks for the user to accept the license; however, answering the question does not proceed the installation so installing via conda is recommended in this case
 pip install labelme
 # or you can install everything by conda command
 # conda install labelme -c conda-forge
