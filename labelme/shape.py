@@ -4,6 +4,7 @@ import math
 from qtpy import QtCore
 from qtpy import QtGui
 
+
 import labelme.utils
 
 
@@ -99,6 +100,20 @@ class Shape(object):
 
     def close(self):
         self._closed = True
+
+    def getPoints(self):
+        pt_coords = []
+        for pt in self.points:
+            pt_coords.append([pt.x(), pt.y()])
+        return pt_coords
+
+    def resetAllPoints(self, points):
+        self.points = []
+        for pt in points:
+            p = QtCore.QPoint()
+            p.setX(pt[0][0])
+            p.setY(pt[0][1])
+            self.points.append(p)
 
     def addPoint(self, point):
         if self.points and point == self.points[0]:

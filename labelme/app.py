@@ -31,7 +31,7 @@ from labelme.widgets import LabelListWidget
 from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
-from labelme.widgets import ZoomWidget
+from labelme.widgets import ZoomWidget, SnakeWidget
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -165,6 +165,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.file_dock.setWidget(fileListWidget)
 
         self.zoomWidget = ZoomWidget()
+        self.snakeWidget = SnakeWidget()
         self.setAcceptDrops(True)
 
         self.canvas = self.labelList.canvas = Canvas(
@@ -390,6 +391,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Create a duplicate of the selected polygons"),
             enabled=False,
         )
+        snake = action(
+            self.tr("Snake"),
+            self.initializeSnake,
+            shortcuts["initialize_snake"],
+            "snake",
+            self.tr("Snake"),
+            enabled=False,
+        )
         copy = action(
             self.tr("Copy Polygons"),
             self.copySelectedShape,
@@ -453,6 +462,10 @@ class MainWindow(QtWidgets.QMainWindow):
             icon="help",
             tip=self.tr("Show tutorial page"),
         )
+
+        snake_param = QtWidgets.QWidgetAction(self)
+        snake_param.setDefaultWidget(self.snakeWidget)
+        self.snakeWidget.setEnabled(False)
 
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
@@ -610,6 +623,8 @@ class MainWindow(QtWidgets.QMainWindow):
             delete=delete,
             edit=edit,
             duplicate=duplicate,
+            snake=snake,
+            snake_param=snake_param,
             copy=copy,
             paste=paste,
             undoLastPoint=undoLastPoint,
@@ -639,6 +654,7 @@ class MainWindow(QtWidgets.QMainWindow):
             editMenu=(
                 edit,
                 duplicate,
+                snake,
                 delete,
                 None,
                 undo,
@@ -659,6 +675,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
                 edit,
                 duplicate,
+                snake,
                 copy,
                 paste,
                 delete,
@@ -764,6 +781,8 @@ class MainWindow(QtWidgets.QMainWindow):
             createMode,
             editMode,
             duplicate,
+            snake,
+            snake_param,
             copy,
             paste,
             delete,
@@ -832,6 +851,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Callbacks:
         self.zoomWidget.valueChanged.connect(self.paintCanvas)
+        self.snakeWidget.valueChanged.connect(self.paintCanvas)
 
         self.populateModeActions()
 
@@ -921,6 +941,7 @@ class MainWindow(QtWidgets.QMainWindow):
             z.setEnabled(value)
         for action in self.actions.onLoadActive:
             action.setEnabled(value)
+        self.snakeWidget.setEnabled(True)
 
     def queueEvent(self, function):
         QtCore.QTimer.singleShot(0, function)
@@ -1149,6 +1170,7 @@ class MainWindow(QtWidgets.QMainWindow):
         n_selected = len(selected_shapes)
         self.actions.delete.setEnabled(n_selected)
         self.actions.duplicate.setEnabled(n_selected)
+        self.actions.snake.setEnabled(n_selected)
         self.actions.copy.setEnabled(n_selected)
         self.actions.edit.setEnabled(n_selected == 1)
 
@@ -1314,6 +1336,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def duplicateSelectedShape(self):
         added_shapes = self.canvas.duplicateSelectedShapes()
+        self.labelList.clearSelection()
+        for shape in added_shapes:
+            self.addLabel(shape)
+        self.setDirty()
+
+
+    def initializeSnake(self):
+        downsampling_ratio = self.snakeWidget.value()
+        added_shapes = self.canvas.initializeSnake(self.imagePath, downsampling_ratio)
         self.labelList.clearSelection()
         for shape in added_shapes:
             self.addLabel(shape)

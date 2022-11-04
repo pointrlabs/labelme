@@ -5,7 +5,7 @@ from qtpy import QtWidgets
 from labelme import QT5
 from labelme.shape import Shape
 import labelme.utils
-
+from labelme.utils.snake import executeSnake
 
 # TODO(unknown):
 # - [maybe] Find optimal epsilon value.
@@ -39,6 +39,7 @@ class Canvas(QtWidgets.QWidget):
     _fill_drawing = False
     _highlight_polygons = False
     _perpendicular_constraint = False
+    _initialize_snake = False
 
     def __init__(self, *args, **kwargs):
         self.epsilon = kwargs.pop("epsilon", 10.0)
@@ -58,6 +59,8 @@ class Canvas(QtWidgets.QWidget):
         self.current = None
         self.selectedShapes = []  # save the selected shapes here
         self.selectedShapesCopy = []
+        self.obstacleShapes = []
+        self.ignoreShapes = []
         # self.line represents:
         #   - createMode == 'polygon': edge from last point to current
         #   - createMode == 'rectangle': diagonal line of the rectangle
@@ -94,6 +97,21 @@ class Canvas(QtWidgets.QWidget):
         # Window select mode
         self.window_selection_mode = False
         self.selection_window = dict()
+
+
+    def getObstacleShapes(self):
+        obstacles = []
+        for shape in self.shapes:
+            if shape.label == 'wall' or shape.label == 'obstacle':
+                obstacles.append(shape)
+        self.obstacleShapes = obstacles
+
+    def getIgnoreShapes(self):
+        ignores = []
+        for shape in self.shapes:
+            if shape.label == 'ignore':
+                ignores.append(shape)
+        self.ignoreShapes = ignores
 
     def fillDrawing(self):
         return self._fill_drawing
@@ -667,10 +685,33 @@ class Canvas(QtWidgets.QWidget):
         self.storeShapes()
         self.update()
 
+    def initializeSnake(self, imagePath, downsampling_ratio):
+        if self.selectedShapes:
+            self.selectedShapesCopy = [s.copy() for s in self.selectedShapes]
+            self.getObstacleShapes()
+            self.getIgnoreShapes()
+            obstacleShapes = self.obstacleShapes
+            ignoreShapes = self.ignoreShapes
+            obstaclePolygons = []
+            ignorePolygons = []
+            for obstacle in obstacleShapes:
+                obstaclePolygons.append(obstacle.getPoints())
+            for ignore in ignoreShapes:
+                ignorePolygons.append(ignore.getPoints())
+
+            for s in self.selectedShapesCopy:
+                initialPolygon = s.getPoints()
+                snakeShape = executeSnake(imagePath, initialPolygon, obstaclePolygons, ignorePolygons, downsampling_ratio)
+                s.resetAllPoints(snakeShape)
+            self.selectedShapesCopy = [s]
+            self.endMove(copy=True)
+
+        return self.selectedShapes
+
     def duplicateSelectedShapes(self):
         if self.selectedShapes:
             self.selectedShapesCopy = [s.copy() for s in self.selectedShapes]
-            self.boundedShiftShapes(self.selectedShapesCopy)
+            #self.boundedShiftShapes(self.selectedShapesCopy)
             self.endMove(copy=True)
         return self.selectedShapes
 
