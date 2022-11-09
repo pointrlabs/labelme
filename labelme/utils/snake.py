@@ -8,22 +8,23 @@ from scipy import ndimage as ndi
 import visvalingamwyatt as vw
 from tqdm import tqdm 
 
-def executeSnake(imagePath, initialPolygon, obstaclePolygons, ignorePolygons, down_sampling_ratio):
+def executeSnake(imagePath, initialPolygon, obstaclePolygons, ignorePolygons, down_sampling_ratio, simplification_threshold=100):
 
     print(imagePath)
     print(initialPolygon)
 
     img = np.array(Image.open(imagePath).convert("L"))
 
-    # Add obstacles 
-    for obstacle in obstaclePolygons:
-        contours = np.asarray(obstacle, dtype=np.int32)
-        cv2.fillPoly(img, pts = [contours], color =(0,0,0))
 
     # Add ignore regions
     for ignore in ignorePolygons:
         contours = np.asarray(ignore, dtype=np.int32)
         cv2.fillPoly(img, pts = [contours], color =(255,255,255))
+
+    # Add obstacles 
+    for obstacle in obstaclePolygons:
+        contours = np.asarray(obstacle, dtype=np.int32)
+        cv2.fillPoly(img, pts = [contours], color =(0,0,0))
 
     # Draw initial contour
     imgCopy = img.copy()
@@ -73,7 +74,10 @@ def executeSnake(imagePath, initialPolygon, obstaclePolygons, ignorePolygons, do
 
     contour_raw, _ = find_contours_hull(binary_img)
     
-    contour = simplify_polygon(contour_raw, [{'method_name': 'visvalingam', 'threshold': 200}])
+    if simplification_threshold == 0:
+        contour = contour_raw
+    else:
+        contour = simplify_polygon(contour_raw, [{'method_name': 'visvalingam', 'threshold': simplification_threshold}])
 
     img_tmp = np.asarray(binary_img, dtype=np.uint8)
     cv2.imwrite('/Users/egecetintas-pointr/Desktop/final_binary.png', img_tmp)

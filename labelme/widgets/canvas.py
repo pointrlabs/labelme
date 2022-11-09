@@ -685,7 +685,7 @@ class Canvas(QtWidgets.QWidget):
         self.storeShapes()
         self.update()
 
-    def initializeSnake(self, imagePath, downsampling_ratio):
+    def initializeSnake(self, imagePath, downsampling_ratio, simplification_threshold):
         if self.selectedShapes:
             self.selectedShapesCopy = [s.copy() for s in self.selectedShapes]
             self.getObstacleShapes()
@@ -701,7 +701,7 @@ class Canvas(QtWidgets.QWidget):
 
             for s in self.selectedShapesCopy:
                 initialPolygon = s.getPoints()
-                snakeShape = executeSnake(imagePath, initialPolygon, obstaclePolygons, ignorePolygons, downsampling_ratio)
+                snakeShape = executeSnake(imagePath, initialPolygon, obstaclePolygons, ignorePolygons, downsampling_ratio, simplification_threshold)
                 s.resetAllPoints(snakeShape)
             self.selectedShapesCopy = [s]
             self.endMove(copy=True)

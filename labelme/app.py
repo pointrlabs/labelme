@@ -31,7 +31,7 @@ from labelme.widgets import LabelListWidget
 from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
-from labelme.widgets import ZoomWidget, SnakeWidget
+from labelme.widgets import ZoomWidget, SnakeWidget, SimplificationWidget
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -166,6 +166,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.zoomWidget = ZoomWidget()
         self.snakeWidget = SnakeWidget()
+        self.simplificationWidget = SimplificationWidget()
         self.setAcceptDrops(True)
 
         self.canvas = self.labelList.canvas = Canvas(
@@ -399,6 +400,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Snake"),
             enabled=False,
         )
+        snake_txt_description_1 = action(
+            "Downsample",
+            enabled=False,
+        )
+        snake_txt_description_2 = action(
+            "Simplification Th.",
+            enabled=False,
+        )
         copy = action(
             self.tr("Copy Polygons"),
             self.copySelectedShape,
@@ -466,6 +475,10 @@ class MainWindow(QtWidgets.QMainWindow):
         snake_param = QtWidgets.QWidgetAction(self)
         snake_param.setDefaultWidget(self.snakeWidget)
         self.snakeWidget.setEnabled(False)
+
+        simplification_param = QtWidgets.QWidgetAction(self)
+        simplification_param.setDefaultWidget(self.simplificationWidget)
+        self.simplificationWidget.setEnabled(False)
 
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
@@ -625,6 +638,7 @@ class MainWindow(QtWidgets.QMainWindow):
             duplicate=duplicate,
             snake=snake,
             snake_param=snake_param,
+            simplification_param=simplification_param,
             copy=copy,
             paste=paste,
             undoLastPoint=undoLastPoint,
@@ -781,8 +795,13 @@ class MainWindow(QtWidgets.QMainWindow):
             createMode,
             editMode,
             duplicate,
+            None,
             snake,
+            snake_txt_description_1,
             snake_param,
+            snake_txt_description_2,
+            simplification_param,
+            None,
             copy,
             paste,
             delete,
@@ -852,6 +871,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Callbacks:
         self.zoomWidget.valueChanged.connect(self.paintCanvas)
         self.snakeWidget.valueChanged.connect(self.paintCanvas)
+        self.simplificationWidget.valueChanged.connect(self.paintCanvas)
 
         self.populateModeActions()
 
@@ -942,6 +962,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for action in self.actions.onLoadActive:
             action.setEnabled(value)
         self.snakeWidget.setEnabled(True)
+        self.simplificationWidget.setEnabled(True)
 
     def queueEvent(self, function):
         QtCore.QTimer.singleShot(0, function)
@@ -1344,7 +1365,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def initializeSnake(self):
         downsampling_ratio = self.snakeWidget.value()
-        added_shapes = self.canvas.initializeSnake(self.imagePath, downsampling_ratio)
+        simplification_threshold = self.simplificationWidget.value()
+        added_shapes = self.canvas.initializeSnake(self.imagePath, downsampling_ratio, simplification_threshold)
         self.labelList.clearSelection()
         for shape in added_shapes:
             self.addLabel(shape)

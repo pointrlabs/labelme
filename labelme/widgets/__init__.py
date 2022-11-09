@@ -20,3 +20,4 @@ from .unique_label_qlist_widget import UniqueLabelQListWidget
 
 from .zoom_widget import ZoomWidget
 from .snake_widget import SnakeWidget
+from .simplification_widget import SimplificationWidget
