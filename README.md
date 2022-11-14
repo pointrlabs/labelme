@@ -1,3 +1,16 @@
+## Additional functionalities:
+### Snake
+Draw an initial contour labelled as 'Building'
+  <img src="readme-figures/initial-contour.png"><br/>
+Switch to 'Edit Polygons' and pick the polygon before running snake.
+  <img src="readme-figures/edit-polygon-mode.png"><br/>
+Adjust parameters. 'Downsample' (1/2, 1/4, 1/8, ...) downsamples the image with the given value. With downsample there's a trade-off between speed and accuracy. You can try the snake with a higher downsampling ratio (i.e., 1/8) first and if the snake fits to the building use a lower downsampling ratio (i.e., 1.2). The simplification (visvalingam) lowers the number of vertices. 
+  <img src="readme-figures/run-snake.png"><br/>
+You get a new annotation after the processing.<br/>
+You can add virtual walls (labelled as 'wall') and ignore regions (labelled as 'ignore') to manipulate the snake. For example, it is be beneficial when there are small openings that the snake would penetrate through. In that case, simply add a polygon to cover the openings with the label 'wall'. You can also delete regions from the drawing with 'ignore' polygons. Here's an example:
+  <img src="readme-figures/wall-ignore-example.png"><br/>
+
+
 <h1 align="center">
   <img src="labelme/icons/icon.png"><br/>labelme
 </h1>

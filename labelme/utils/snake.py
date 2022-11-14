@@ -11,10 +11,8 @@ from tqdm import tqdm
 def executeSnake(imagePath, initialPolygon, obstaclePolygons, ignorePolygons, down_sampling_ratio, simplification_threshold=100):
 
     print(imagePath)
-    print(initialPolygon)
 
     img = np.array(Image.open(imagePath).convert("L"))
-
 
     # Add ignore regions
     for ignore in ignorePolygons:
@@ -33,17 +31,13 @@ def executeSnake(imagePath, initialPolygon, obstaclePolygons, ignorePolygons, do
         contour_initial.append([vertex])
     contour_initial = np.asarray(contour_initial, dtype=np.int32)
     cv2.drawContours(imgCopy, contour_initial, -1, (0,0,0), 20)
-    #cv2.fillPoly(imgCopy, pts = [contour_initial], color =(0,0,0))
 
-    # cv2.imwrite('/Users/egecetintas-pointr/Desktop/img_obstacles.png', imgCopy)
     img = Image.fromarray(img).convert('L')
 
     img_init_level = np.zeros((img.size[1],img.size[0]), dtype=np.uint8)
 
     contours = np.asarray(initialPolygon, dtype=np.int32)
-    cv2.fillPoly(img_init_level, pts = [contours], color =(255,255,255))
-    # cv2.imwrite('/Users/egecetintas-pointr/Desktop/init_level.png', img_init_level)
-    
+    cv2.fillPoly(img_init_level, pts = [contours], color =(255,255,255))    
     
     img_init_level = Image.fromarray(img_init_level).convert("L")
     
@@ -53,13 +47,9 @@ def executeSnake(imagePath, initialPolygon, obstaclePolygons, ignorePolygons, do
     
     img = np.asarray(img.resize((img.size[0] // down_sampling_ratio, img.size[1] // down_sampling_ratio))) / 255.0
     img_init_level = np.asarray(img_init_level.resize((img_init_level.size[0] // down_sampling_ratio, img_init_level.size[1] // down_sampling_ratio)), dtype=np.bool)
-    #img_init_level = img_init_level.transpose()
 
     eps = 1e-5
     img[img < img.max()-eps] = 0
-
-    # cv2.imwrite('/Users/egecetintas-pointr/Desktop/img_canvas_pre.png', img*255)
-    # cv2.imwrite('/Users/egecetintas-pointr/Desktop/img_init_level.png', np.asarray(img_init_level, dtype=np.uint8)*255)
 
     binary_img = morphological_geodesic_active_contour(img, iterations=1000,
                                             init_level_set=img_init_level,
@@ -80,7 +70,6 @@ def executeSnake(imagePath, initialPolygon, obstaclePolygons, ignorePolygons, do
         contour = simplify_polygon(contour_raw, [{'method_name': 'visvalingam', 'threshold': simplification_threshold}])
 
     img_tmp = np.asarray(binary_img, dtype=np.uint8)
-    cv2.imwrite('/Users/egecetintas-pointr/Desktop/final_binary.png', img_tmp)
     print('Snake converged!')
     return contour
 
