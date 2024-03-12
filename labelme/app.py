@@ -1163,6 +1163,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 item = QtWidgets.QListWidgetItem()
                 item.setData(Qt.UserRole, shape.label)
                 self.uniqLabelList.addItem(item)
+        self.canvas.storeShapes()
         self.setDirty()
 
     def fileSearchChanged(self):
