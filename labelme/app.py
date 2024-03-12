@@ -1112,13 +1112,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if not self.canvas.editing():
             return
+
         if not item:
-            item = self.currentItem()
-        if item is None:
-            return
-        shape = item.shape()
-        if shape is None:
-            return
+            # item = self.currentItem()
+            items = self.labelList.selectedItems()
+            if not items:
+                return
+
+            shapes = [item.shape() for item in items]
+            if not shapes:
+                return
+        else:
+            items = [item]
+            shapes = [item.shape()]
+
+        shape = shapes[0]
         text, flags, group_id = self.labelDialog.popUp(
             text=shape.label,
             flags=shape.flags,
@@ -1134,24 +1142,29 @@ class MainWindow(QtWidgets.QMainWindow):
                 ),
             )
             return
-        shape.label = text
-        shape.flags = flags
-        shape.group_id = group_id
 
-        self._update_shape_color(shape)
-        if shape.group_id is None:
-            item.setText(
-                '{} <font color="#{:02x}{:02x}{:02x}">●</font>'.format(
-                    shape.label, *shape.fill_color.getRgb()[:3]
+        for idx, shape in enumerate(shapes):
+            item = items[idx]
+
+            shape.label = text
+            shape.flags = flags
+            shape.group_id = group_id
+
+            self._update_shape_color(shape)
+            if shape.group_id is None:
+                item.setText(
+                    '{} <font color="#{:02x}{:02x}{:02x}">●</font>'.format(
+                        shape.label, *shape.fill_color.getRgb()[:3]
+                    )
                 )
-            )
-        else:
-            item.setText("{} ({})".format(shape.label, shape.group_id))
+            else:
+                item.setText("{} ({})".format(shape.label, shape.group_id))
+            if not self.uniqLabelList.findItemsByLabel(shape.label):
+                item = QtWidgets.QListWidgetItem()
+                item.setData(Qt.UserRole, shape.label)
+                self.uniqLabelList.addItem(item)
+        self.canvas.storeShapes()
         self.setDirty()
-        if not self.uniqLabelList.findItemsByLabel(shape.label):
-            item = QtWidgets.QListWidgetItem()
-            item.setData(Qt.UserRole, shape.label)
-            self.uniqLabelList.addItem(item)
 
     def fileSearchChanged(self):
         self.importDirImages(
@@ -1193,7 +1206,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.duplicate.setEnabled(n_selected)
         self.actions.snake.setEnabled(n_selected)
         self.actions.copy.setEnabled(n_selected)
-        self.actions.edit.setEnabled(n_selected == 1)
+        self.actions.edit.setEnabled(n_selected)
 
     def addLabel(self, shape):
         if shape.group_id is None:
