@@ -83,6 +83,8 @@ shortcuts:
 
   zoom_in: [Ctrl++, Ctrl+=]
   zoom_out: Ctrl+-
+  increase_font_size: Shift+0
+  decrease_font_size: Shift+-
   zoom_to_original: Ctrl+0
   fit_window: Ctrl+F
   fit_width: Ctrl+Shift+F

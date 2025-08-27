@@ -85,6 +85,7 @@ class Canvas(QtWidgets.QWidget):
         self.movingShape = False
         self.snapping = True
         self.hShapeIsSelected = False
+        self.label_font_size = 16
         self._painter = QtGui.QPainter()
         self._cursor = CURSOR_DEFAULT
         # Menus:
@@ -747,6 +748,7 @@ class Canvas(QtWidgets.QWidget):
 
         p.drawPixmap(0, 0, self.pixmap)
         Shape.scale = self.scale
+        Shape.label_font_size = self.label_font_size
         for shape in self.shapes:
             if (shape.selected or not self._hideBackround) and self.isVisible(
                 shape
@@ -1024,4 +1026,8 @@ class Canvas(QtWidgets.QWidget):
         self.setPaintLabels(value)
         for shape in self.shapes:
             shape.paint_label = value
+        self.update()
+
+    def change_font_size(self, inc):
+        self.label_font_size = max(2, self.label_font_size + inc)
         self.update()

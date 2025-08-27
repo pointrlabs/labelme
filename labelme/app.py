@@ -6,6 +6,7 @@ import os
 import os.path as osp
 import re
 import webbrowser
+from functools import partial
 
 import imgviz
 import natsort
@@ -625,6 +626,24 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.display_labels.trigger()
 
+        increase_font_size = action(
+            self.tr("Increase font size"),
+            partial(self.add_font_size, 2),
+            shortcuts["increase_font_size"],
+            None,
+            self.tr("Decrease font size"),
+            enabled=True,
+        )
+
+        decrease_font_size = action(
+            self.tr("Decrease font size"),
+            partial(self.add_font_size, -2),
+            shortcuts["decrease_font_size"],
+            None,
+            self.tr("Decrease font size"),
+            enabled=True,
+        )
+
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
         utils.addActions(labelMenu, (edit, delete))
@@ -772,6 +791,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 zoomIn,
                 zoomOut,
+                increase_font_size,
+                decrease_font_size,
                 zoomOrg,
                 keepPrevScale,
                 None,
@@ -2171,4 +2192,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggle_paint_labels(self):
         self.canvas.updatePaintLabels(self.display_labels.isChecked())
+
+    def add_font_size(self, increment=2):
+        self.canvas.change_font_size(increment)
 
