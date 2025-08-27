@@ -22,11 +22,11 @@ label_colors: null
 shape:
   # drawing
   line_color: [0, 255, 0, 128]
-  fill_color: [0, 255, 0, 0]  # transparent
+  fill_color: [255, 0, 0, 60]  # transparent
   vertex_fill_color: [0, 255, 0, 255]
   # selecting / hovering
-  select_line_color: [255, 255, 255, 255]
-  select_fill_color: [0, 255, 0, 155]
+  select_line_color: [0, 128, 255, 175]
+  select_fill_color: [0, 128, 255, 175]
   hvertex_fill_color: [255, 255, 255, 255]
   point_size: 8
 

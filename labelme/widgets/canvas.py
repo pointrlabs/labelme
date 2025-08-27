@@ -40,6 +40,7 @@ class Canvas(QtWidgets.QWidget):
     _highlight_polygons = False
     _perpendicular_constraint = False
     _initialize_snake = False
+    _paint_labels = False
 
     def __init__(self, *args, **kwargs):
         self.epsilon = kwargs.pop("epsilon", 10.0)
@@ -130,6 +131,12 @@ class Canvas(QtWidgets.QWidget):
 
     def setHighlightPolygons(self, value):
         self._highlight_polygons = value
+
+    def paintLabels(self):
+        return self._paint_labels
+
+    def setPaintLabels(self, value):
+        self._paint_labels = value
 
     @property
     def createMode(self):
@@ -429,7 +436,7 @@ class Canvas(QtWidgets.QWidget):
                             self.finalise()
                 elif not self.outOfPixmap(pos):
                     # Create new shape.
-                    self.current = Shape(shape_type=self.createMode)
+                    self.current = Shape(shape_type=self.createMode, paint_label=self.paintLabels())
                     self.current.addPoint(pos)
                     if self.createMode == "point":
                         self.finalise()
@@ -1011,4 +1018,10 @@ class Canvas(QtWidgets.QWidget):
         self.restoreCursor()
         self.pixmap = None
         self.shapesBackups = []
+        self.update()
+
+    def updatePaintLabels(self, value):
+        self.setPaintLabels(value)
+        for shape in self.shapes:
+            shape.paint_label = value
         self.update()

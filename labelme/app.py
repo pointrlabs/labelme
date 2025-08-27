@@ -614,6 +614,17 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         highlight_polygons.trigger()
 
+        self.display_labels = action(
+            self.tr("Display labels"),
+            self.toggle_paint_labels,
+            None,
+            None,
+            self.tr("Display labels"),
+            checkable=True,
+            enabled=True,
+        )
+        self.display_labels.trigger()
+
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
         utils.addActions(labelMenu, (edit, delete))
@@ -757,6 +768,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 hideAll,
                 showAll,
                 highlight_polygons,
+                self.display_labels,
                 None,
                 zoomIn,
                 zoomOut,
@@ -1235,10 +1247,10 @@ class MainWindow(QtWidgets.QMainWindow):
         r, g, b = self._get_rgb_by_label(shape.label)
         shape.line_color = QtGui.QColor(r, g, b)
         shape.vertex_fill_color = QtGui.QColor(r, g, b)
-        shape.hvertex_fill_color = QtGui.QColor(255, 255, 255)
+        shape.hvertex_fill_color = QtGui.QColor(*self._config["shape"]["hvertex_fill_color"])
         shape.fill_color = QtGui.QColor(r, g, b, 60) #48 #128
-        shape.select_line_color = QtGui.QColor(255, 255, 255)
-        shape.select_fill_color = QtGui.QColor(r, g, b, 175) #155
+        shape.select_line_color = QtGui.QColor(*self._config["shape"]["select_line_color"])
+        shape.select_fill_color = QtGui.QColor(*self._config["shape"]["select_fill_color"])
 
     def _get_rgb_by_label(self, label):
         if self._config["shape_color"] == "auto":
@@ -1287,6 +1299,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 label=label,
                 shape_type=shape_type,
                 group_id=group_id,
+                paint_label=self.display_labels.isChecked(),
             )
             for x, y in points:
                 shape.addPoint(QtCore.QPointF(x, y))
@@ -2155,3 +2168,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     images.append(relativePath)
         images = natsort.os_sorted(images)
         return images
+
+    def toggle_paint_labels(self):
+        self.canvas.updatePaintLabels(self.display_labels.isChecked())
+
