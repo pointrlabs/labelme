@@ -515,7 +515,7 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
         zoomOrg = action(
-            self.tr("&Original size"),
+            self.tr("&Zoom to Original size"),
             functools.partial(self.setZoom, 100),
             shortcuts["zoom_to_original"],
             "zoom",
@@ -605,7 +605,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         highlight_polygons = action(
-            self.tr("Highlight polygons"),
+            self.tr("Highlight Polygons"),
             self.canvas.setHighlightPolygons,
             None,
             None,
@@ -616,7 +616,7 @@ class MainWindow(QtWidgets.QMainWindow):
         highlight_polygons.trigger()
 
         self.display_labels = action(
-            self.tr("Display labels"),
+            self.tr("Display Labels"),
             self.toggle_paint_labels,
             None,
             None,
@@ -627,19 +627,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.display_labels.trigger()
 
         increase_font_size = action(
-            self.tr("Increase font size"),
+            self.tr("Increase Font Size"),
             partial(self.add_font_size, 2),
             shortcuts["increase_font_size"],
-            None,
+            "zoom-in",
             self.tr("Decrease font size"),
             enabled=True,
         )
 
         decrease_font_size = action(
-            self.tr("Decrease font size"),
+            self.tr("Decrease Font Size"),
             partial(self.add_font_size, -2),
             shortcuts["decrease_font_size"],
-            None,
+            "zoom-out",
             self.tr("Decrease font size"),
             enabled=True,
         )
@@ -791,9 +791,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 zoomIn,
                 zoomOut,
+                zoomOrg,
                 increase_font_size,
                 decrease_font_size,
-                zoomOrg,
                 keepPrevScale,
                 None,
                 fitWindow,

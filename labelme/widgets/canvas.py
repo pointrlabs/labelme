@@ -132,6 +132,7 @@ class Canvas(QtWidgets.QWidget):
 
     def setHighlightPolygons(self, value):
         self._highlight_polygons = value
+        self.update()
 
     def paintLabels(self):
         return self._paint_labels
