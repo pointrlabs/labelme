@@ -220,22 +220,25 @@ class Shape(object):
                 pen.setColor(color)
                 painter.setPen(pen)
 
-                min_x = sys.maxsize
-                min_y = sys.maxsize
-                min_y_label = int(1.25 * self.label_font_size)
+                final_x = sys.maxsize
+                final_y = sys.maxsize
+                final_y_label = int(1.25 * self.label_font_size)
                 for point in self.points:
-                    min_x = min(min_x, point.x())
-                    min_y = min(min_y, point.y())
-                if min_x != sys.maxsize and min_y != sys.maxsize:
+                    if final_y > point.y():
+                        final_y = point.y()
+                        final_x = point.x()
+                    elif final_y == point.y():
+                        final_x = min(final_x, point.x())
+                if final_x != sys.maxsize and final_y != sys.maxsize:
                     font = QtGui.QFont()
                     font.setPointSize(self.label_font_size)
                     # font.setBold(True)
                     painter.setFont(font)
                     if self.label is None:
                         self.label = ""
-                    if min_y < min_y_label:
-                        min_y += min_y_label
-                    painter.drawText(int(min_x), int(min_y), self.label)
+                    if final_y < final_y_label:
+                        final_y += final_y_label
+                    painter.drawText(int(final_x), int(final_y), self.label)
 
     def drawVertex(self, path, i):
         d = self.point_size / self.scale
