@@ -4,6 +4,7 @@ import functools
 import math
 import os
 import os.path as osp
+import codecs
 import re
 import webbrowser
 from functools import partial
@@ -20,7 +21,7 @@ from labelme import PY2
 
 from . import utils
 from labelme.config import get_config
-from labelme.label_file import LabelFile
+from labelme.label_file import LabelFile, LabelFileFormat
 from labelme.label_file import LabelFileError
 from labelme.logger import logger
 from labelme.shape import Shape
@@ -55,6 +56,7 @@ class MainWindow(QtWidgets.QMainWindow):
         output=None,
         output_file=None,
         output_dir=None,
+        default_predef_class_file=os.path.join(os.path.dirname(__file__), "data", "predefined_classes.txt"),
     ):
         if output is not None:
             logger.warning(
@@ -97,10 +99,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._copied_shapes = None
 
+        self.label_file_format = LabelFileFormat(self._config["label_file_format"])
+        self.default_predef_class_file = default_predef_class_file
+        self.label_hist = []
+        self.load_predefined_classes(default_predef_class_file)
+
         # Main widgets and related state.
         self.labelDialog = LabelDialog(
             parent=self,
-            labels=self._config["labels"],
+            labels=self.label_hist,
             sort_labels=self._config["sort_labels"],
             show_text_field=self._config["show_label_text_field"],
             completion=self._config["label_completion"],
@@ -110,6 +117,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.labelList = LabelListWidget()
         self.lastOpenDir = None
+
 
         self.flag_dock = self.flag_widget = None
         self.flag_dock = QtWidgets.QDockWidget(self.tr("Flags"), self)
@@ -137,8 +145,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 "Press 'Esc' to deselect."
             )
         )
-        if self._config["labels"]:
-            for label in self._config["labels"]:
+        if self.label_hist:
+            for label in self.label_hist:
                 item = self.uniqLabelList.createItemFromLabel(label)
                 self.uniqLabelList.addItem(item)
                 rgb = self._get_rgb_by_label(label)
@@ -615,7 +623,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         highlight_polygons.trigger()
 
-        self.display_labels = action(
+        display_labels = action(
             self.tr("Display Labels"),
             self.toggle_paint_labels,
             None,
@@ -624,7 +632,6 @@ class MainWindow(QtWidgets.QMainWindow):
             checkable=True,
             enabled=True,
         )
-        self.display_labels.trigger()
 
         increase_font_size = action(
             self.tr("Increase Font Size"),
@@ -644,6 +651,22 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
 
+        def getFormatMeta(format):
+            """
+            returns a tuple containing (title, icon_name) of the selected format
+            """
+            if format == LabelFileFormat.JSON:
+                return 'JSON', 'format_json'
+            elif format == LabelFileFormat.YOLO:
+                return 'YOLO', 'format_yolo'
+            else:
+                raise ValueError('Unknown label file format.')
+
+        save_format = action(getFormatMeta(self.label_file_format)[0],
+                             self.changeFormat, 'Ctrl+Y',
+                             getFormatMeta(self.label_file_format)[1],
+                             "Change format", enabled=True)
+
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
         utils.addActions(labelMenu, (edit, delete))
@@ -662,6 +685,7 @@ class MainWindow(QtWidgets.QMainWindow):
             open=open_,
             close=close,
             deleteFile=deleteFile,
+            display_labels=display_labels,
             toggleKeepPrevMode=toggle_keep_prev_mode,
             delete=delete,
             edit=edit,
@@ -669,6 +693,7 @@ class MainWindow(QtWidgets.QMainWindow):
             snake=snake,
             snake_param=snake_param,
             simplification_param=simplification_param,
+            save_format=save_format,
             copy=copy,
             paste=paste,
             undoLastPoint=undoLastPoint,
@@ -740,6 +765,7 @@ class MainWindow(QtWidgets.QMainWindow):
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
         )
+        display_labels.trigger()
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
 
@@ -761,6 +787,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 opendir,
                 self.menus.recentFiles,
                 save,
+                save_format,
                 saveAs,
                 saveAuto,
                 changeOutputDir,
@@ -787,7 +814,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 hideAll,
                 showAll,
                 highlight_polygons,
-                self.display_labels,
+                display_labels,
                 None,
                 zoomIn,
                 zoomOut,
@@ -823,6 +850,7 @@ class MainWindow(QtWidgets.QMainWindow):
             openNextImg,
             openPrevImg,
             save,
+            save_format,
             deleteFile,
             None,
             createRectangleMode,
@@ -953,6 +981,9 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(self.menus.edit, actions + self.actions.editMenu)
 
     def setDirty(self):
+        if not self.filename:
+            return
+
         # Even if we autosave the file, we keep the ability to undo
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
 
@@ -1025,6 +1056,31 @@ class MainWindow(QtWidgets.QMainWindow):
         elif len(self.recentFiles) >= self.maxRecent:
             self.recentFiles.pop()
         self.recentFiles.insert(0, filename)
+
+    def setFormat(self, save_format):
+        if save_format == LabelFileFormat.JSON:
+            self.actions.save_format.setText("JSON")
+            self.actions.save_format.setIconText("JSON")
+            self.actions.save_format.setIcon(utils.newIcon("format_json"))
+            self.label_file_format = LabelFileFormat.JSON
+            LabelFile.suffix = ".json"
+
+        elif save_format == LabelFileFormat.YOLO:
+            self.actions.save_format.setText("YOLO")
+            self.actions.save_format.setIconText("YOLO")
+            self.actions.save_format.setIcon(utils.newIcon("format_yolo"))
+            self.label_file_format = LabelFileFormat.YOLO
+            LabelFile.suffix = ".txt"
+
+    def changeFormat(self):
+        if self.label_file_format == LabelFileFormat.JSON:
+            self.setFormat(LabelFileFormat.YOLO)
+        elif self.label_file_format == LabelFileFormat.YOLO:
+            self.setFormat(LabelFileFormat.JSON)
+        else:
+            raise ValueError('Unknown label file format.')
+        self.setDirty()
+
 
     # Callbacks
 
@@ -1321,7 +1377,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 label=label,
                 shape_type=shape_type,
                 group_id=group_id,
-                paint_label=self.display_labels.isChecked(),
+                paint_label=self.actions.display_labels.isChecked(),
             )
             for x, y in points:
                 shape.addPoint(QtCore.QPointF(x, y))
@@ -1352,7 +1408,7 @@ class MainWindow(QtWidgets.QMainWindow):
         lf = LabelFile()
 
         def format_shape(s):
-            data = s.other_data.copy()
+            data = s.other_data.copy() if s.other_data else {}
             data.update(
                 dict(
                     label=s.label.encode("utf-8") if PY2 else s.label,
@@ -1376,16 +1432,27 @@ class MainWindow(QtWidgets.QMainWindow):
             imageData = self.imageData if self._config["store_data"] else None
             if osp.dirname(filename) and not osp.exists(osp.dirname(filename)):
                 os.makedirs(osp.dirname(filename))
-            lf.save(
-                filename=filename,
-                shapes=shapes,
-                imagePath=imagePath,
-                imageData=imageData,
-                imageHeight=self.image.height(),
-                imageWidth=self.image.width(),
-                otherData=self.otherData,
-                flags=flags,
-            )
+            if self.label_file_format == LabelFileFormat.YOLO:
+                lf.save_yolo_format(
+                    filename=filename,
+                    shapes=shapes,
+                    image_path=imagePath,
+                    image_data=QtGui.QImage.fromData(imageData),
+                    class_list=self.label_hist
+                )
+            elif self.label_file_format == LabelFileFormat.JSON:
+                lf.save(
+                    filename=filename,
+                    shapes=shapes,
+                    imagePath=imagePath,
+                    imageData=imageData,
+                    imageHeight=self.image.height(),
+                    imageWidth=self.image.width(),
+                    otherData=self.otherData,
+                    flags=flags,
+                )
+            else:
+                raise ValueError("Unable to recognize file format " + self.label_file_format.value)
             self.labelFile = lf
             items = self.fileListWidget.findItems(
                 self.imagePath, Qt.MatchExactly
@@ -1483,6 +1550,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
             self.setDirty()
+            if text not in self.label_hist:
+                self.label_hist.append(text)
         else:
             self.canvas.undoLastLine()
             self.canvas.shapesBackups.pop()
@@ -1604,15 +1673,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.status(
             str(self.tr("Loading %s...")) % osp.basename(str(filename))
         )
-        label_file = osp.splitext(filename)[0] + ".json"
+        label_file = osp.splitext(filename)[0] + LabelFile.suffix
         if self.output_dir:
             label_file_without_path = osp.basename(label_file)
             label_file = osp.join(self.output_dir, label_file_without_path)
-        if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
-            label_file
-        ):
+        if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(label_file):
             try:
-                self.labelFile = LabelFile(label_file)
+                self.labelFile = LabelFile(label_file, self.default_predef_class_file)
             except LabelFileError as e:
                 self.errorMessage(
                     self.tr("Error opening file"),
@@ -2160,7 +2227,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for filename in self.scanAllImages(dirpath):
             if pattern and pattern not in filename:
                 continue
-            label_file = osp.splitext(filename)[0] + ".json"
+            label_file = osp.splitext(filename)[0] + LabelFile.suffix
             if self.output_dir:
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
@@ -2191,8 +2258,18 @@ class MainWindow(QtWidgets.QMainWindow):
         return images
 
     def toggle_paint_labels(self):
-        self.canvas.updatePaintLabels(self.display_labels.isChecked())
+        self.canvas.updatePaintLabels(self.actions.display_labels.isChecked())
 
     def add_font_size(self, increment=2):
         self.canvas.change_font_size(increment)
+
+    def load_predefined_classes(self, predef_classes_file):
+        if os.path.exists(predef_classes_file) is True:
+            with codecs.open(predef_classes_file, 'r', 'utf8') as f:
+                for line in f:
+                    line = line.strip()
+                    if self.label_hist is None:
+                        self.label_hist = [line]
+                    else:
+                        self.label_hist.append(line)
 
