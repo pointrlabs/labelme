@@ -56,7 +56,7 @@ class MainWindow(QtWidgets.QMainWindow):
         output=None,
         output_file=None,
         output_dir=None,
-        default_predef_class_file=os.path.join(os.path.dirname(__file__), "data", "predefined_classes.txt"),
+        default_predef_classes_file=os.path.join(os.path.dirname(__file__), "data", "predefined_classes.txt"),
     ):
         if output is not None:
             logger.warning(
@@ -100,9 +100,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._copied_shapes = None
 
         self.label_file_format = LabelFileFormat(self._config["label_file_format"])
-        self.default_predef_class_file = default_predef_class_file
+        self.default_predef_classes_file = default_predef_classes_file
         self.label_hist = []
-        self.load_predefined_classes(default_predef_class_file)
 
         # Main widgets and related state.
         self.labelDialog = LabelDialog(
@@ -145,12 +144,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 "Press 'Esc' to deselect."
             )
         )
-        if self.label_hist:
-            for label in self.label_hist:
-                item = self.uniqLabelList.createItemFromLabel(label)
-                self.uniqLabelList.addItem(item)
-                rgb = self._get_rgb_by_label(label)
-                self.uniqLabelList.setItemLabel(item, label, rgb)
         self.label_dock = QtWidgets.QDockWidget(self.tr("Label List"), self)
         self.label_dock.setObjectName("Label List")
         self.label_dock.setWidget(self.uniqLabelList)
@@ -1679,7 +1672,11 @@ class MainWindow(QtWidgets.QMainWindow):
             label_file = osp.join(self.output_dir, label_file_without_path)
         if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(label_file):
             try:
-                self.labelFile = LabelFile(label_file, self.default_predef_class_file)
+                self.labelFile = LabelFile(label_file, self.default_predef_classes_file)
+                if self.labelFile.predef_classes_file:
+                    self.load_predefined_classes(self.labelFile.predef_classes_file)
+                else:
+                    self.load_predefined_classes(self.default_predef_classes_file)
             except LabelFileError as e:
                 self.errorMessage(
                     self.tr("Error opening file"),
@@ -1692,10 +1689,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.status(self.tr("Error reading %s") % label_file)
                 return False
             self.imageData = self.labelFile.imageData
-            self.imagePath = osp.join(
-                osp.dirname(label_file),
-                self.labelFile.imagePath,
-            )
+            self.imagePath = osp.join(osp.dirname(label_file), self.labelFile.imagePath)
             self.otherData = self.labelFile.otherData
         else:
             self.imageData = LabelFile.load_image_file(filename)
@@ -2264,7 +2258,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.change_font_size(increment)
 
     def load_predefined_classes(self, predef_classes_file):
-        if os.path.exists(predef_classes_file) is True:
+        self.label_hist = []
+        if osp.exists(predef_classes_file) is True:
             with codecs.open(predef_classes_file, 'r', 'utf8') as f:
                 for line in f:
                     line = line.strip()
@@ -2272,4 +2267,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.label_hist = [line]
                     else:
                         self.label_hist.append(line)
-
+            for label in self.label_hist:
+                item = self.uniqLabelList.createItemFromLabel(label)
+                self.uniqLabelList.addItem(item)
+                rgb = self._get_rgb_by_label(label)
+                self.uniqLabelList.setItemLabel(item, label, rgb)

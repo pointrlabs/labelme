@@ -47,8 +47,7 @@ class YOLOWriter:
         out_class_file = None   # Update class list .txt
 
         if target_file is None:
-            out_file = open(
-            self.filename + ".txt", 'w', encoding=ENCODE_METHOD)
+            out_file = open(self.filename + ".txt", 'w', encoding=ENCODE_METHOD)
             classes_file = os.path.join(os.path.dirname(os.path.abspath(self.filename)), "classes.txt")
             out_class_file = open(classes_file, 'w')
 

@@ -44,11 +44,12 @@ class LabelFile(object):
 
     suffix = ".json"
 
-    def __init__(self, filename=None, default_predef_class_file=None):
+    def __init__(self, filename=None, default_predef_classes_file=None):
         self.shapes = []
         self.imagePath = None
         self.imageData = None
-        self.default_predef_class_file = default_predef_class_file
+        self.default_predef_classes_file = default_predef_classes_file
+        self.predef_classes_file = None
         if filename is not None:
             if self.suffix == ".txt":
                 self.load_yolo_file(filename)
@@ -166,7 +167,7 @@ class LabelFile(object):
         imagePath = osp.splitext(filename)[0] + ".png"
         imageData = self.load_image_file(imagePath)
         image = QtGui.QImage.fromData(imageData)
-        yolo_reader = YoloReader(filename, image, self.default_predef_class_file)
+        yolo_reader = YoloReader(filename, image, self.default_predef_classes_file)
         shapes = yolo_reader.get_shapes()
 
         # Only replace data after everything is loaded.
@@ -176,6 +177,7 @@ class LabelFile(object):
         self.imageData = imageData
         self.filename = filename
         self.otherData = {}
+        self.predef_classes_file = yolo_reader.class_list_path
 
     @staticmethod
     def _check_image_height_and_width(imageData, imageHeight, imageWidth):
