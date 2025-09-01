@@ -42,7 +42,7 @@ class LabelFileError(Exception):
 
 class LabelFile(object):
 
-    suffix = ".json"
+    suffix = ".txt"
 
     def __init__(self, filename=None, default_predef_classes_file=None):
         self.shapes = []

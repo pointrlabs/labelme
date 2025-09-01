@@ -19,7 +19,7 @@ shape_color: auto  # null, 'auto', 'manual'
 shift_auto_shape_color: 0
 label_colors: null
 
-label_file_format: "JSON"
+label_file_format: "YOLO"
 
 shape:
   # drawing

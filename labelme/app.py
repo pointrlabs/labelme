@@ -2188,7 +2188,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 tuple(extensions)
             ):
                 continue
-            label_file = osp.splitext(file)[0] + ".json"
+            label_file = osp.splitext(file)[0] + LabelFile.suffix
             if self.output_dir:
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
