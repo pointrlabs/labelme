@@ -991,7 +991,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.save.setEnabled(True)
         title = __appname__
         if self.filename is not None:
-            title = "{} - {}*".format(title, self.filename)
+            title = "{} - {}* - Label Format: {}".format(title, self.filename, self.label_file_format.value)
         self.setWindowTitle(title)
 
     def setClean(self):
@@ -1005,7 +1005,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.createLineStripMode.setEnabled(True)
         title = __appname__
         if self.filename is not None:
-            title = "{} - {}".format(title, self.filename)
+            title = "{} - {} - Label Format: {}".format(title, self.filename, self.label_file_format.value)
         self.setWindowTitle(title)
 
         if self.hasLabelFile():
