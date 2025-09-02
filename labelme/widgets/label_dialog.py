@@ -83,14 +83,7 @@ class LabelDialog(QtWidgets.QDialog):
                 QtCore.Qt.ScrollBarAlwaysOff
             )
         self._sort_labels = sort_labels
-        if labels:
-            self.labelList.addItems(labels)
-        if self._sort_labels:
-            self.labelList.sortItems()
-        else:
-            self.labelList.setDragDropMode(
-                QtWidgets.QAbstractItemView.InternalMove
-            )
+        self.updateLabels(labels)
         self.labelList.currentItemChanged.connect(self.labelSelected)
         self.labelList.itemDoubleClicked.connect(self.labelDoubleClicked)
         self.edit.setListWidget(self.labelList)
@@ -236,3 +229,14 @@ class LabelDialog(QtWidgets.QDialog):
             return self.edit.text(), self.getFlags(), self.getGroupId()
         else:
             return None, None, None
+
+    def updateLabels(self, labels):
+        self.labelList.clear()
+        if labels:
+            self.labelList.addItems(labels)
+        if self._sort_labels:
+            self.labelList.sortItems()
+        else:
+            self.labelList.setDragDropMode(
+                QtWidgets.QAbstractItemView.InternalMove
+            )
