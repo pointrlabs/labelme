@@ -1237,7 +1237,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.mayContinue():
             return
 
-        currIndex = self.imageList.index(str(item.text()))
+        currIndex = self.imageList.index(str(item.data(Qt.UserRole)))
         if currIndex < len(self.imageList):
             filename = self.imageList[currIndex]
             if filename:
@@ -2145,7 +2145,7 @@ class MainWindow(QtWidgets.QMainWindow):
         lst = []
         for i in range(self.fileListWidget.count()):
             item = self.fileListWidget.item(i)
-            lst.append(item.text())
+            lst.append(item.data(Qt.UserRole))
         return lst
 
     def importDroppedImageFiles(self, imageFiles):
@@ -2155,6 +2155,7 @@ class MainWindow(QtWidgets.QMainWindow):
         ]
 
         self.filename = None
+        commonPath = osp.commonpath(imageFiles)
         for file in imageFiles:
             if file in self.imageList or not file.lower().endswith(
                 tuple(extensions)
@@ -2164,7 +2165,9 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.output_dir:
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
-            item = QtWidgets.QListWidgetItem(file)
+            relativePath = osp.relpath(file, commonPath)
+            item = QtWidgets.QListWidgetItem(relativePath)
+            item.setData(Qt.UserRole, file)
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
                 label_file
@@ -2190,14 +2193,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.lastOpenDir = dirpath
         self.filename = None
         self.fileListWidget.clear()
-        for filename in self.scanAllImages(dirpath):
+        imageFiles = self.scanAllImages(dirpath)
+        commonPath = osp.commonpath(imageFiles)
+        for filename in imageFiles:
             if pattern and pattern not in filename:
                 continue
             label_file = osp.splitext(filename)[0] + LabelFile.suffix
             if self.output_dir:
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
-            item = QtWidgets.QListWidgetItem(filename)
+            relativePath = osp.relpath(filename, commonPath)
+            item = QtWidgets.QListWidgetItem(relativePath)
+            item.setData(Qt.UserRole, filename)
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
                 label_file
