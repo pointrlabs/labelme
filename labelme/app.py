@@ -997,12 +997,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def setClean(self):
         self.dirty = False
         self.actions.save.setEnabled(False)
-        self.actions.createMode.setEnabled(True)
-        self.actions.createRectangleMode.setEnabled(True)
-        self.actions.createCircleMode.setEnabled(True)
-        self.actions.createLineMode.setEnabled(True)
-        self.actions.createPointMode.setEnabled(True)
-        self.actions.createLineStripMode.setEnabled(True)
+        self.toggleDrawMode(True)
         title = __appname__
         if self.filename is not None:
             title = "{} - {} - Label Format: {}".format(title, self.filename, self.label_file_format.value)
@@ -1055,6 +1050,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.save_format.setText("JSON")
             self.actions.save_format.setIconText("JSON")
             self.actions.save_format.setIcon(utils.newIcon("format_json"))
+            self.actions.createMode.setEnabled(True)
             self.label_file_format = LabelFileFormat.JSON
             LabelFile.suffix = ".json"
 
@@ -1062,6 +1058,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.save_format.setText("YOLO")
             self.actions.save_format.setIconText("YOLO")
             self.actions.save_format.setIcon(utils.newIcon("format_yolo"))
+            self.actions.createMode.setEnabled(False)
             self.label_file_format = LabelFileFormat.YOLO
             LabelFile.suffix = ".txt"
 
@@ -1097,61 +1094,36 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.undo.setEnabled(not drawing)
         self.actions.delete.setEnabled(not drawing)
 
+    def onlyDisableGivenCreateModeActions(self, offArray=[]):
+        """Disable given create mode actions and enable every other one
+        If no actions are given, enable all create mode actions
+        """
+        createModeActions = {
+            "polygon": self.actions.createMode,
+            "rectangle": self.actions.createRectangleMode,
+            "circle": self.actions.createCircleMode,
+            "line": self.actions.createLineMode,
+            "point": self.actions.createPointMode,
+            "linestrip": self.actions.createLineStripMode
+        }
+        for key, mode in createModeActions.items():
+            if key in offArray:
+                mode.setEnabled(False)
+            else:
+                mode.setEnabled(True)
+
     def toggleDrawMode(self, edit=True, createMode="polygon"):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
+        if self.label_file_format == LabelFileFormat.YOLO: # You can only label rectangles in the YOLO format
+            offArray = ["polygon", "line", "point", "circle", "linestrip"]
+            if not edit and createMode == "rectangle" : offArray.append("rectangle")
+            self.onlyDisableGivenCreateModeActions(offArray)
+            return
         if edit:
-            self.actions.createMode.setEnabled(True)
-            self.actions.createRectangleMode.setEnabled(True)
-            self.actions.createCircleMode.setEnabled(True)
-            self.actions.createLineMode.setEnabled(True)
-            self.actions.createPointMode.setEnabled(True)
-            self.actions.createLineStripMode.setEnabled(True)
-        else:
-            if createMode == "polygon":
-                self.actions.createMode.setEnabled(False)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "rectangle":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(False)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "line":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(False)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "point":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(False)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "circle":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(False)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "linestrip":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(False)
-            else:
-                raise ValueError("Unsupported createMode: %s" % createMode)
+            self.onlyDisableGivenCreateModeActions() # Enable every mode action
+            return
+        self.onlyDisableGivenCreateModeActions([createMode])
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
