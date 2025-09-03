@@ -208,6 +208,7 @@ class LabelFile(object):
         imagePath,
         imageHeight,
         imageWidth,
+        class_list,
         imageData=None,
         otherData=None,
         flags=None,
@@ -236,9 +237,13 @@ class LabelFile(object):
         for key, value in otherData.items():
             assert key not in data
             data[key] = value
+        classes_file = osp.join(osp.dirname(osp.abspath(filename)), "classes.txt")
         try:
             with open(filePath, "w") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
+            with open(classes_file, 'w') as out_classes_file:
+                for c in class_list:
+                    out_classes_file.write(c+'\n')
             self.filename = filename
         except Exception as e:
             raise LabelFileError(e)

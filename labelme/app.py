@@ -1276,6 +1276,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.uniqLabelList.addItem(item)
             rgb = self._get_rgb_by_label(shape.label)
             self.uniqLabelList.setItemLabel(item, shape.label, rgb)
+        if shape.label not in self.label_hist:
+            self.label_hist.append(shape.label)
         self.labelDialog.addLabelHistory(shape.label)
         for action in self.actions.onShapesPresent:
             action.setEnabled(True)
@@ -1418,6 +1420,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     imageWidth=self.image.width(),
                     otherData=self.otherData,
                     flags=flags,
+                    class_list=self.label_hist
                 )
             else:
                 raise ValueError("Unable to recognize file format " + self.label_file_format.value)
