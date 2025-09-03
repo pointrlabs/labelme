@@ -1360,6 +1360,7 @@ class MainWindow(QtWidgets.QMainWindow):
             shape.other_data = other_data
 
             s.append(shape)
+
         self.loadShapes(s)
 
     def loadFlags(self, flags):
@@ -1656,6 +1657,14 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.load_predefined_classes(self.labelFile.predef_classes_file)
                 else:
                     self.load_predefined_classes(self.default_predef_classes_file)
+                nonPredefinedClassesFound = False
+                for shape in self.labelFile.shapes:
+                    if shape["label"] not in self.predefined_classes:
+                        nonPredefinedClassesFound = True
+                if nonPredefinedClassesFound and not self.areYouSure(
+                    "This label file includes labels that are not in the predefined classes file. Are you sure you want to continue?"
+                ):
+                    return False
             except LabelFileError as e:
                 self.errorMessage(
                     self.tr("Error opening file"),
@@ -2260,6 +2269,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def load_predefined_classes(self, predef_classes_file):
         self.label_hist = []
+        self.uniqLabelList.clear()
         if osp.exists(predef_classes_file) is True:
             with codecs.open(predef_classes_file, 'r', 'utf8') as f:
                 for line in f:
