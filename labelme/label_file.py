@@ -147,6 +147,10 @@ class LabelFile(object):
         except Exception as e:
             raise LabelFileError(e)
 
+        predef_classes_file = osp.join(osp.dirname(osp.realpath(filename)), "classes.txt")
+        if not osp.exists(predef_classes_file):
+            predef_classes_file = self.default_predef_classes_file
+
         otherData = {}
         for key, value in data.items():
             if key not in keys:
@@ -159,6 +163,7 @@ class LabelFile(object):
         self.imageData = imageData
         self.filename = filename
         self.otherData = otherData
+        self.predef_classes_file = predef_classes_file
 
     def load_yolo_file(self, filename):
         if osp.isfile(filename) is False:
