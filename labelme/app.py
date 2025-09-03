@@ -102,6 +102,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.label_file_format = LabelFileFormat(self._config["label_file_format"])
         self.default_predef_classes_file = default_predef_classes_file
         self.label_hist = []
+        self.predefined_classes = []
 
         # Main widgets and related state.
         self.labelDialog = LabelDialog(
@@ -1405,6 +1406,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     image_data=QtGui.QImage.fromData(imageData),
                     class_list=self.label_hist
                 )
+                self.predefined_classes = self.label_hist.copy()
             elif self.label_file_format == LabelFileFormat.JSON:
                 lf.save(
                     filename=filename,
@@ -1506,6 +1508,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 ),
             )
             text = ""
+
+        if text and text not in self.label_hist:
+            if self.areYouSure("You are adding a new label type. Are you sure you want to continue?"):
+                self.label_hist.append(text)
+            else:
+                text = ""
+
         if text:
             self.labelList.clearSelection()
             shape = self.canvas.setLastLabel(text, flags)
@@ -1515,8 +1524,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
             self.setDirty()
-            if text not in self.label_hist:
-                self.label_hist.append(text)
         else:
             self.canvas.undoLastLine()
             self.canvas.shapesBackups.pop()
@@ -2069,6 +2076,21 @@ class MainWindow(QtWidgets.QMainWindow):
         else:  # answer == mb.Cancel
             return False
 
+    def areYouSure(self, message):
+        mb = QtWidgets.QMessageBox
+        msg = self.tr(message)
+        answer = mb.question(
+            self,
+            self.tr("Continue?"),
+            msg,
+            mb.Yes | mb.No,
+            mb.No,
+        )
+        if answer == mb.Yes:
+            return True
+        else:
+            return False
+
     def errorMessage(self, title, message):
         return QtWidgets.QMessageBox.critical(
             self, title, "<p><b>%s</b></p>%s" % (title, message)
@@ -2252,3 +2274,4 @@ class MainWindow(QtWidgets.QMainWindow):
                 rgb = self._get_rgb_by_label(label)
                 self.uniqLabelList.setItemLabel(item, label, rgb)
             self.labelDialog.updateLabels(self.label_hist)
+            self.predefined_classes = self.label_hist.copy()
