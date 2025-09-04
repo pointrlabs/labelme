@@ -34,6 +34,7 @@ from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget, SnakeWidget, SimplificationWidget
+from labelme.widgets.format_selection_dialog import FormatSelectionDialog
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -2199,7 +2200,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 | QtWidgets.QFileDialog.DontResolveSymlinks,
             )
         )
-        self.importDirImages(targetDirPath)
+        if targetDirPath:
+            self.importDirImages(targetDirPath)
 
     @property
     def imageList(self):
@@ -2245,6 +2247,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.openNextImg()
 
     def importDirImages(self, dirpath, pattern=None, load=True):
+        dlg = FormatSelectionDialog()
+        if dlg.exec_() == QtWidgets.QDialog.Rejected:
+            return
+        self.setFormat(dlg.selected_format())
+
         self.actions.openNextImg.setEnabled(True)
         self.actions.openPrevImg.setEnabled(True)
 
