@@ -260,12 +260,21 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Save labels to file"),
             enabled=False,
         )
-        saveAs = action(
-            self.tr("&Save As"),
-            self.saveFileAs,
+        exportToJson = action(
+            self.tr("&Export To JSON"),
+            lambda: self.saveFileAs(LabelFileFormat.JSON, export=True),
             shortcuts["save_as"],
             "save-as",
-            self.tr("Save labels to a different file"),
+            self.tr("Export labels to a JSON file"),
+            enabled=False,
+        )
+
+        exportToYolo = action(
+            self.tr("&Export To YOLO"),
+            lambda: self.saveFileAs(LabelFileFormat.YOLO, export=True),
+            shortcuts["save_as"],
+            "save-as",
+            self.tr("Export labels to a YOLO file"),
             enabled=False,
         )
 
@@ -675,7 +684,8 @@ class MainWindow(QtWidgets.QMainWindow):
             saveWithImageData=saveWithImageData,
             changeOutputDir=changeOutputDir,
             save=save,
-            saveAs=saveAs,
+            exportToJson=exportToJson,
+            exportToYolo=exportToYolo,
             open=open_,
             close=close,
             deleteFile=deleteFile,
@@ -711,7 +721,7 @@ class MainWindow(QtWidgets.QMainWindow):
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
-            fileMenuActions=(open_, opendir, save, saveAs, close, quit),
+            fileMenuActions=(open_, opendir, save, exportToJson, exportToYolo, close, quit),
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
@@ -757,7 +767,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
                 brightnessContrast,
             ),
-            onShapesPresent=(saveAs, hideAll, showAll),
+            onShapesPresent=(hideAll, showAll),
         )
         display_labels.trigger()
 
@@ -782,7 +792,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.menus.recentFiles,
                 save,
                 save_format,
-                saveAs,
+                exportToJson,
+                exportToYolo,
                 saveAuto,
                 changeOutputDir,
                 saveWithImageData,
@@ -1052,6 +1063,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.save_format.setIconText("JSON")
             self.actions.save_format.setIcon(utils.newIcon("format_json"))
             self.actions.createMode.setEnabled(True)
+            self.actions.exportToJson.setEnabled(False)
+            self.actions.exportToYolo.setEnabled(True)
             self.label_file_format = LabelFileFormat.JSON
             LabelFile.suffix = ".json"
 
@@ -1060,6 +1073,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.save_format.setIconText("YOLO")
             self.actions.save_format.setIcon(utils.newIcon("format_yolo"))
             self.actions.createMode.setEnabled(False)
+            self.actions.exportToJson.setEnabled(True)
+            self.actions.exportToYolo.setEnabled(False)
             self.label_file_format = LabelFileFormat.YOLO
             LabelFile.suffix = ".txt"
 
@@ -1373,7 +1388,7 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
             self.flag_widget.addItem(item)
 
-    def saveLabels(self, filename):
+    def saveLabels(self, filename, export=False):
         lf = LabelFile()
 
         def format_shape(s):
@@ -1407,7 +1422,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     shapes=shapes,
                     image_path=imagePath,
                     image_data=QtGui.QImage.fromData(imageData),
-                    class_list=self.label_hist
+                    class_list=self.label_hist,
+                    export=export
                 )
                 self.predefined_classes = self.label_hist.copy()
             elif self.label_file_format == LabelFileFormat.JSON:
@@ -1420,11 +1436,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     imageWidth=self.image.width(),
                     otherData=self.otherData,
                     flags=flags,
-                    class_list=self.label_hist
+                    class_list=self.label_hist,
+                    export=export
                 )
             else:
                 raise ValueError("Unable to recognize file format " + self.label_file_format.value)
-            self.labelFile = lf
+            if not export: self.labelFile = lf
             items = self.fileListWidget.findItems(
                 self.imagePath, Qt.MatchExactly
             )
@@ -1760,6 +1777,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.paintCanvas()
         self.addRecentFile(self.filename)
         self.toggleActions(True)
+        self.setFormat(self.label_file_format)
         self.canvas.setFocus()
         self.status(str(self.tr("Loaded %s")) % osp.basename(str(filename)))
         return True
@@ -1971,9 +1989,14 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self._saveFile(self.saveFileDialog())
 
-    def saveFileAs(self, _value=False):
+    def saveFileAs(self, format, export=False):
         assert not self.image.isNull(), "cannot save empty image"
-        self._saveFile(self.saveFileDialog())
+        oldFormat = self.label_file_format
+        self.setFormat(format)
+        filename = self.saveFileDialog()
+        if filename:
+            self._saveFile(filename, export=export)
+        if export: self.setFormat(oldFormat)
 
     def saveFileDialog(self):
         caption = self.tr("%s - Choose File") % __appname__
@@ -2009,8 +2032,8 @@ class MainWindow(QtWidgets.QMainWindow):
             filename, _ = filename
         return filename
 
-    def _saveFile(self, filename):
-        if filename and self.saveLabels(filename):
+    def _saveFile(self, filename, export=False):
+        if filename and self.saveLabels(filename, export=export) and not export:
             self.addRecentFile(filename)
             self.setClean()
 
@@ -2021,7 +2044,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setClean()
         self.toggleActions(False)
         self.canvas.setEnabled(False)
-        self.actions.saveAs.setEnabled(False)
+        self.actions.exportToJson.setEnabled(False)
+        self.actions.exportToYolo.setEnabled(False)
 
     def getLabelFile(self):
         if self.filename.lower().endswith(".json"):

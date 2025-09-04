@@ -41,7 +41,7 @@ class YOLOWriter:
 
         return class_index, x_center, y_center, w, h
 
-    def save(self, class_list=[], target_file=None):
+    def save(self, class_list=[], target_file=None, export=False):
 
         out_file = None  # Update yolo .txt
         out_class_file = None   # Update class list .txt
@@ -49,12 +49,10 @@ class YOLOWriter:
         if target_file is None:
             out_file = open(self.filename + ".txt", 'w', encoding=ENCODE_METHOD)
             classes_file = os.path.join(os.path.dirname(os.path.abspath(self.filename)), "classes.txt")
-            out_class_file = open(classes_file, 'w')
 
         else:
             out_file = codecs.open(target_file, 'w', encoding=ENCODE_METHOD)
             classes_file = os.path.join(os.path.dirname(os.path.abspath(target_file)), "classes.txt")
-            out_class_file = open(classes_file, 'w')
 
 
         for box in self.box_list:
@@ -64,10 +62,11 @@ class YOLOWriter:
 
         # print (classList)
         # print (out_class_file)
-        for c in class_list:
-            out_class_file.write(c+'\n')
+        if not export:
+            with open(classes_file, 'w') as out_class_file:
+                for c in class_list:
+                    out_class_file.write(c+'\n')
 
-        out_class_file.close()
         out_file.close()
 
 

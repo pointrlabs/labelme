@@ -212,6 +212,7 @@ class LabelFile(object):
         imageData=None,
         otherData=None,
         flags=None,
+        export=False
     ):
         fileDir = osp.dirname(filename)
         filePathBase = osp.splitext(osp.basename(filename))[0]
@@ -241,9 +242,10 @@ class LabelFile(object):
         try:
             with open(filePath, "w") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
-            with open(classes_file, 'w') as out_classes_file:
-                for c in class_list:
-                    out_classes_file.write(c+'\n')
+            if not export:
+                with open(classes_file, 'w') as out_classes_file:
+                    for c in class_list:
+                        out_classes_file.write(c+'\n')
             self.filename = filename
         except Exception as e:
             raise LabelFileError(e)
@@ -275,7 +277,7 @@ class LabelFile(object):
             bnd_box = LabelFile.convert_points_to_bnd_box(points)
             writer.add_bnd_box(bnd_box[0], bnd_box[1], bnd_box[2], bnd_box[3], label)
 
-        writer.save(target_file=filePath, class_list=class_list)
+        writer.save(target_file=filePath, class_list=class_list, export=export)
         return
 
 
