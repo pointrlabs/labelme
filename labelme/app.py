@@ -1905,12 +1905,10 @@ class MainWindow(QtWidgets.QMainWindow):
             "*.{}".format(fmt.data().decode())
             for fmt in QtGui.QImageReader.supportedImageFormats()
         ]
-        filters = self.tr("Image & Label files (%s)") % " ".join(
-            formats + ["*%s" % LabelFile.suffix]
-        )
+        filters = ["JSON Label Files (*.png *.json)", "YOLO Label Files (*.png *.txt)"]
         fileDialog = FileDialogPreview(self)
         fileDialog.setFileMode(FileDialogPreview.ExistingFile)
-        fileDialog.setNameFilter(filters)
+        fileDialog.setNameFilters(filters)
         fileDialog.setWindowTitle(
             self.tr("%s - Choose Image or Label file") % __appname__,
         )
@@ -1918,6 +1916,10 @@ class MainWindow(QtWidgets.QMainWindow):
         fileDialog.setViewMode(FileDialogPreview.Detail)
         if fileDialog.exec_():
             fileName = fileDialog.selectedFiles()[0]
+            if fileDialog.selectedNameFilter().startswith("YOLO"):
+                self.setFormat(LabelFileFormat.YOLO)
+            else:
+                self.setFormat(LabelFileFormat.JSON)
             if fileName:
                 self.loadFile(fileName)
 
