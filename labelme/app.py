@@ -660,16 +660,15 @@ class MainWindow(QtWidgets.QMainWindow):
             returns a tuple containing (title, icon_name) of the selected format
             """
             if format == LabelFileFormat.JSON:
-                return 'JSON', 'format_json'
+                return 'format_json'
             elif format == LabelFileFormat.YOLO:
-                return 'YOLO', 'format_yolo'
+                return 'format_yolo'
             else:
                 raise ValueError('Unknown label file format.')
 
-        save_format = action(getFormatMeta(self.label_file_format)[0],
-                             self.changeFormat, 'Ctrl+Y',
-                             getFormatMeta(self.label_file_format)[1],
-                             "Change format", enabled=True)
+        current_format = action(None, None, None,
+                             getFormatMeta(self.label_file_format),
+                             "Current format", enabled=True)
 
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
@@ -698,7 +697,7 @@ class MainWindow(QtWidgets.QMainWindow):
             snake=snake,
             snake_param=snake_param,
             simplification_param=simplification_param,
-            save_format=save_format,
+            current_format=current_format,
             copy=copy,
             paste=paste,
             undoLastPoint=undoLastPoint,
@@ -792,7 +791,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 opendir,
                 self.menus.recentFiles,
                 save,
-                save_format,
+                current_format,
                 exportToJson,
                 exportToYolo,
                 saveAuto,
@@ -856,8 +855,8 @@ class MainWindow(QtWidgets.QMainWindow):
             openNextImg,
             openPrevImg,
             save,
-            save_format,
             deleteFile,
+            current_format,
             None,
             createRectangleMode,
             createMode,
@@ -1060,9 +1059,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setFormat(self, save_format):
         if save_format == LabelFileFormat.JSON:
-            self.actions.save_format.setText("JSON")
-            self.actions.save_format.setIconText("JSON")
-            self.actions.save_format.setIcon(utils.newIcon("format_json"))
+            self.actions.current_format.setIcon(utils.newIcon("format_json"))
             self.actions.createMode.setEnabled(True)
             self.actions.exportToJson.setEnabled(False)
             self.actions.exportToYolo.setEnabled(True)
@@ -1070,23 +1067,12 @@ class MainWindow(QtWidgets.QMainWindow):
             LabelFile.suffix = ".json"
 
         elif save_format == LabelFileFormat.YOLO:
-            self.actions.save_format.setText("YOLO")
-            self.actions.save_format.setIconText("YOLO")
-            self.actions.save_format.setIcon(utils.newIcon("format_yolo"))
+            self.actions.current_format.setIcon(utils.newIcon("format_yolo"))
             self.actions.createMode.setEnabled(False)
             self.actions.exportToJson.setEnabled(True)
             self.actions.exportToYolo.setEnabled(False)
             self.label_file_format = LabelFileFormat.YOLO
             LabelFile.suffix = ".txt"
-
-    def changeFormat(self):
-        if self.label_file_format == LabelFileFormat.JSON:
-            self.setFormat(LabelFileFormat.YOLO)
-        elif self.label_file_format == LabelFileFormat.YOLO:
-            self.setFormat(LabelFileFormat.JSON)
-        else:
-            raise ValueError('Unknown label file format.')
-        self.setDirty()
 
 
     # Callbacks
