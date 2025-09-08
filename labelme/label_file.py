@@ -250,7 +250,7 @@ class LabelFile(object):
         except Exception as e:
             raise LabelFileError(e)
 
-    def save_yolo_format(self, filename, shapes, image_path, image_data, class_list):
+    def save_yolo_format(self, filename, shapes, image_path, image_data, class_list, export):
         fileDir = osp.dirname(filename)
         filePathBase = osp.splitext(osp.basename(filename))[0]
         filePath = osp.join(fileDir, filePathBase + ".txt")
