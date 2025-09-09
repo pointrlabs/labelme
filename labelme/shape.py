@@ -1,3 +1,4 @@
+import sys
 import copy
 import math
 
@@ -13,9 +14,12 @@ import labelme.utils
 
 
 DEFAULT_LINE_COLOR = QtGui.QColor(0, 255, 0, 128)  # bf hovering
-DEFAULT_FILL_COLOR = QtGui.QColor(0, 255, 0, 128)  # hovering
-DEFAULT_SELECT_LINE_COLOR = QtGui.QColor(255, 255, 255)  # selected
-DEFAULT_SELECT_FILL_COLOR = QtGui.QColor(0, 255, 0, 155)  # selected
+# DEFAULT_FILL_COLOR = QtGui.QColor(255, 0, 0, 128)
+DEFAULT_FILL_COLOR = QtGui.QColor(255, 0, 0, 60)
+# DEFAULT_SELECT_LINE_COLOR = QtGui.QColor(255, 255, 255)
+DEFAULT_SELECT_LINE_COLOR = QtGui.QColor(0, 128, 255, 175)
+# DEFAULT_SELECT_FILL_COLOR = QtGui.QColor(0, 128, 255, 155)
+DEFAULT_SELECT_FILL_COLOR = QtGui.QColor(0, 128, 255, 175)
 DEFAULT_VERTEX_FILL_COLOR = QtGui.QColor(0, 255, 0, 255)  # hovering
 DEFAULT_HVERTEX_FILL_COLOR = QtGui.QColor(255, 255, 255, 255)  # hovering
 
@@ -43,6 +47,7 @@ class Shape(object):
     hvertex_fill_color = DEFAULT_HVERTEX_FILL_COLOR
     point_type = P_ROUND
     point_size = 8
+    label_font_size = 16
     scale = 1.0
 
     def __init__(
@@ -52,6 +57,7 @@ class Shape(object):
         shape_type=None,
         flags=None,
         group_id=None,
+        paint_label=False
     ):
         self.label = label
         self.group_id = group_id
@@ -60,6 +66,7 @@ class Shape(object):
         self.selected = False
         self.shape_type = shape_type
         self.flags = flags
+        self.paint_label = paint_label
         self.other_data = {}
 
         self._highlightIndex = None
@@ -201,6 +208,37 @@ class Shape(object):
                     else self.fill_color
                 )
                 painter.fillPath(line_path, color)
+
+            # Draw text at the top-left
+            if self.paint_label:
+                color = (
+                    self.select_line_color
+                    if self.selected
+                    else self.line_color
+                )
+                color.setAlpha(255)
+                pen.setColor(color)
+                painter.setPen(pen)
+
+                final_x = sys.maxsize
+                final_y = sys.maxsize
+                final_y_label = int(1.25 * self.label_font_size)
+                for point in self.points:
+                    if final_y > point.y():
+                        final_y = point.y()
+                        final_x = point.x()
+                    elif final_y == point.y():
+                        final_x = min(final_x, point.x())
+                if final_x != sys.maxsize and final_y != sys.maxsize:
+                    font = QtGui.QFont()
+                    font.setPointSize(self.label_font_size)
+                    # font.setBold(True)
+                    painter.setFont(font)
+                    if self.label is None:
+                        self.label = ""
+                    if final_y < final_y_label:
+                        final_y += final_y_label
+                    painter.drawText(int(final_x), int(final_y), self.label)
 
     def drawVertex(self, path, i):
         d = self.point_size / self.scale
